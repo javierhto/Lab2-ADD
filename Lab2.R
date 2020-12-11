@@ -12,8 +12,7 @@ library("tidyverse")
 library("ggpubr")
 library("cluster")
 library("factoextra")
-library("dummies")
-library("kableExtra")
+library("VIM")
 
 # a) Preliminares
 
@@ -163,6 +162,44 @@ data <- data.frame(
 
 )
 
+# Manejo de los datos perdidos
+
+lost.data.1 <- sapply(data, function(x) sum(is.na(x)))
+lost.data.2 <- aggr(data)
+
+# Nos indica que hay múltiples observaciones que cuentan con pérdida de datos, 
+# es por esto que solo se usarán las columnas que contengan menos datos perdidos
+# immigration(7), adoption.of.the.budget.resolution(11), physician.fee.freeze(11), 
+# religiosus.groups.in.schools(11) y handicapped.infants(12)
+
+# Borramos las columnas que tenemos datos erroneos
+data1 <- data[c(1,2,4,5,7,11)]
+
+# Borramos las filas que tienen datos perdidos.
+data1 <- data1[!is.na(data1$handicapped.infants),]
+data1 <- data1[!is.na(data1$adoption.of.the.budget.resolution),]
+data1 <- data1[!is.na(data1$physician.fee.freeze),]
+data1 <- data1[!is.na(data1$religiosus.groups.in.schools),]
+data1 <- data1[!is.na(data1$immigration),]
+
+lost.data.3 <- sapply(data1, function(x) sum(is.na(x)))
+lost.data.4 <- aggr(data1)
+
+# ¡De esta forma no tenemos datos faltantes!
+
+# Tomamos la misma muestra con igual número de republicanos y demócratas
+i <- which(data1[["class.name"]] == "republican")
+j <- which(data1[["class.name"]] == "democrat")
+
+set.seed(13)
+N <- 435*0.6/2
+i <- sample(i, N)
+j <- sample(j, N)
+k <- sample(-i, 435-N)
+l <- sample(-j, 435-N)
+
+train.data <- data1[c(i, j), ]
+test.data <- data1[c(k, l), ]
 
 # Analisis de los datos
 # Total: 
@@ -171,9 +208,56 @@ total.observations <- count(raw.data)$n
 # Ahora que tenemos los datos, procederemos a normalizarlos.
 observations.scaled = scale(data[c(2:17)])
 
+# Revisamos el número de clusters
+wcss <- c()
+for(i in 1:20){
+  wcss[i] <- sum(kmeans(train.data[2:6], i)$withinss)
+}
+
+p1 <- ggplot() + geom_point(aes(x = 1:20, y = wcss), color = 'blue') + 
+      geom_line(aes(x = 1:20, y = wcss), color = 'blue') + 
+      ggtitle("Método del Codo") + 
+      xlab('Cantidad de Centroides k') + 
+      ylab('WCSS')
+
+fviz_nbclust(x=train.data, FUNcluster = kmeans, method = "wss", k.max = 15, 
+             diss = get_dist(data1, method = "euclidean"), nstart = 50)
+
+# Podemos apreciar que existen diversosn números de clusters que estabilizan los 
+# valores de wcss, por tanto usaremos 2, 5, 7
+
+# Si miramos los datos agrupados, se agurparán de forma básica
+p2 <- fviz_cluster(object = clusters.2, data = train.data, geom = "point",
+             choose.vars = c("immigration", "adoption.of.the.budget.resolution" ), stand = FALSE, 
+             ellipse.type = "norm") + theme_bw()
+
+clusters.2 <- kmeans(train.data[,2:6], 2)
+clusters.5 <- kmeans(train.data[,2:6], 5)
+clusters.7 <- kmeans(train.data[,2:6], 7)
+
+train.data$cluster.2 <- as.factor(clusters.2$cluster)
+train.data$cluster.5 <- as.factor(clusters.5$cluster)
+train.data$cluster.7 <- as.factor(clusters.7$cluster)
+
+# Probamos otro método
+d <- dist(train.data, method = "binary")
+hc <- hclust(d)
+plot(hc)
+
+# Finalmente usamos PAM
+pam.data.2 <- pam(train.data, 2)
+pam.data.5 <- pam(train.data, 5)
+pam.data.7 <- pam(train.data, 7)
+
+fviz_cluster(pam.data.2)
+fviz_cluster(pam.data.5)
+fviz_cluster(pam.data.7)
+
 # calculamos las distancias
-dist.eucl = dist(data, method = "euclidean")
 
-fviz_dist(dist.eucl)
 
-fviz_nbclust(data, kmeans, method = "wss")
+kmeans1 <- kmeans(data, centers, iter.max = 10, nstart = 1)
+
+pam1 <- pam(data, 4, metric = "euclidean", stand = FALSE)
+pam2 <- pam(raw.data, 4, metric = "euclidean", stand = FALSE)
+
