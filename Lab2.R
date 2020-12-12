@@ -236,21 +236,23 @@ binary.dist <- dist(train.data[, 2:6], method = "binary")
 hc.1 <- hclust(binary.dist)
 plot(hc.1)
 p3 <- fviz_dist(binary.dist)
+dis.matrix.binary = as.matrix(binary.dist)
 
 # Sokal-Michener
 SM.dist <- dist.SM(train.data[, 2:6])
 hc.2 <- hclust(SM.dist)
 plot(hc.2)
 p4 <- fviz_dist(SM.dist)
+dis.matrix.SM = as.matrix(SM.dist)
 
 # Daisy
 daisy.dist = daisy(train.data[, 2:6])
 hc.3 <- hclust(daisy.dist)
 plot(hc.3)
 p5 <- fviz_dist(daisy.dist)
+dis.matrix.daisy = as.matrix(daisy.dist)
 
-
-# Si miramos los datos agrupados, se agurparán de forma básica
+# Creamos los cluster con los datos en bruto
 clusters.2 <- kmeans(train.data[,2:6], 2)
 clusters.5 <- kmeans(train.data[,2:6], 5)
 clusters.7 <- kmeans(train.data[,2:6], 7)
@@ -263,19 +265,74 @@ p6 <- fviz_cluster(clusters.2, data = train.data[,2:6], palette = "jco", ggtheme
 p7 <- fviz_cluster(clusters.5, data = train.data[,2:6], palette = "jco", ggtheme = theme_minimal())
 p8 <- fviz_cluster(clusters.7, data = train.data[,2:6], palette = "jco", ggtheme = theme_minimal())
 
-# Clusters usando distancia Daisy
-dis.matrix.daisy = as.matrix(daisy.dist)
-km.daisy = kmeans(dis.matrix.daisy, 3)
-p9 <- fviz_cluster(km.daisy, data = train.data[, 2:6], palette = "jco", ggtheme = theme_minimal())
+# Creamos los clusters con la distancia binaria
+clusters.binary.2 <- kmeans(dis.matrix.binary, 2)
+clusters.binary.5 <- kmeans(dis.matrix.binary, 5)
+clusters.binary.7 <- kmeans(dis.matrix.binary, 7)
+
+train.data$cluster.binary.2 <- as.factor(clusters.binary.2$cluster)
+train.data$cluster.binary.5 <- as.factor(clusters.binary.5$cluster)
+train.data$cluster.binary.7 <- as.factor(clusters.binary.7$cluster)
+
+p6 <- fviz_cluster(clusters.binary.2, data = dis.matrix.binary, palette = "jco", ggtheme = theme_minimal())
+p7 <- fviz_cluster(clusters.binary.5, data = dis.matrix.binary, palette = "jco", ggtheme = theme_minimal())
+p8 <- fviz_cluster(clusters.binary.7, data = dis.matrix.binary, palette = "jco", ggtheme = theme_minimal())
+
+# Creamos los clusters con la distancia Sokal-Michener
+clusters.SM.2 <- kmeans(dis.matrix.SM, 2)
+clusters.SM.5 <- kmeans(dis.matrix.SM, 5)
+clusters.SM.7 <- kmeans(dis.matrix.SM, 7)
+
+p9 <- fviz_cluster(clusters.SM.2, data = dis.matrix.SM, palette = "jco", ggtheme = theme_minimal())
+p10 <- fviz_cluster(clusters.SM.5, data = dis.matrix.SM, palette = "jco", ggtheme = theme_minimal())
+p11 <- fviz_cluster(clusters.SM.7, data = dis.matrix.SM, palette = "jco", ggtheme = theme_minimal())
+
+# Creamos los clusters con la distancia daisy
+clusters.daisy.2 <- kmeans(dis.matrix.daisy, 2)
+clusters.daisy.5 <- kmeans(dis.matrix.daisy, 5)
+clusters.daisy.7 <- kmeans(dis.matrix.daisy, 7)
+
+p12 <- fviz_cluster(clusters.daisy.2, data = dis.matrix.daisy, palette = "jco", ggtheme = theme_minimal())
+p13 <- fviz_cluster(clusters.daisy.5, data = dis.matrix.daisy, palette = "jco", ggtheme = theme_minimal())
+p14 <- fviz_cluster(clusters.daisy.7, data = dis.matrix.daisy, palette = "jco", ggtheme = theme_minimal())
 
 
 # Finalmente usamos PAM
+
+# PAM datos en bruto
 pam.data.2 <- pam(train.data[, 2:6], 2)
 pam.data.5 <- pam(train.data[, 2:6], 5)
 pam.data.7 <- pam(train.data[, 2:6], 7)
 
-p10 <- fviz_cluster(pam.data.2)
-p11 <- fviz_cluster(pam.data.5)
-p12 <- fviz_cluster(pam.data.7)
+p15 <- fviz_cluster(pam.data.2)
+p16 <- fviz_cluster(pam.data.5)
+p17 <- fviz_cluster(pam.data.7)
+
+# PAM dist binaria
+pam.binary.2 <- pam(dis.matrix.binary, 2)
+pam.binary.5 <- pam(dis.matrix.binary, 5)
+pam.binary.7 <- pam(dis.matrix.binary, 7)
+
+p18 <- fviz_cluster(pam.binary.2)
+p19 <- fviz_cluster(pam.binary.5)
+p20 <- fviz_cluster(pam.binary.7)
+
+# PAM dist Sokal-Michener
+pam.SM.2 <- pam(dis.matrix.SM, 2)
+pam.SM.5 <- pam(dis.matrix.SM, 5)
+pam.SM.7 <- pam(dis.matrix.SM, 7)
+
+p18 <- fviz_cluster(pam.SM.2)
+p19 <- fviz_cluster(pam.SM.5)
+p20 <- fviz_cluster(pam.SM.7)
+
+# PAM dist Daisy
+pam.daisy.2 <- pam(dis.matrix.daisy, 2)
+pam.daisy.5 <- pam(dis.matrix.daisy, 5)
+pam.daisy.7 <- pam(dis.matrix.daisy, 7)
+
+p18 <- fviz_cluster(pam.daisy.2)
+p19 <- fviz_cluster(pam.daisy.5)
+p20 <- fviz_cluster(pam.daisy.7)
 
 
