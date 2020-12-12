@@ -13,6 +13,7 @@ library("ggpubr")
 library("cluster")
 library("factoextra")
 library("VIM")
+library("clusterSim")
 
 # a) Preliminares
 
@@ -203,7 +204,8 @@ test.data <- data1[c(k, l), ]
 
 # Analisis de los datos
 # Total: 
-total.observations <- count(raw.data)$n
+train.observations <- count(train.data)$n
+test.observations <- count(test.data)$n
 
 # Ahora que tenemos los datos, procederemos a normalizarlos.
 observations.scaled = scale(data[c(2:17)])
@@ -220,17 +222,35 @@ p1 <- ggplot() + geom_point(aes(x = 1:20, y = wcss), color = 'blue') +
       xlab('Cantidad de Centroides k') + 
       ylab('WCSS')
 
-fviz_nbclust(x=train.data, FUNcluster = kmeans, method = "wss", k.max = 15, 
+p2 <- fviz_nbclust(x = train.data[, 2:6], FUNcluster = kmeans, method = "wss", k.max = 15, 
              diss = get_dist(data1, method = "euclidean"), nstart = 50)
 
-# Podemos apreciar que existen diversosn números de clusters que estabilizan los 
-# valores de wcss, por tanto usaremos 2, 5, 7
+# Podemos apreciar que existen diversos números de clusters que estabilizan los 
+# valores de wcss, (Método del codo) por tanto usaremos 2, 5, 7
+
+# Calculamos las distancias entre los datos, usaremos la distancia binaria, la
+# distancia Sokal-Michener y Daisy
+
+# Binaria
+binary.dist <- dist(train.data[, 2:6], method = "binary")
+hc.1 <- hclust(binary.dist)
+plot(hc.1)
+p3 <- fviz_dist(binary.dist)
+
+# Sokal-Michener
+SM.dist <- dist.SM(train.data[, 2:6])
+hc.2 <- hclust(SM.dist)
+plot(hc.2)
+p4 <- fviz_dist(SM.dist)
+
+# Daisy
+daisy.dist = daisy(train.data[, 2:6])
+hc.3 <- hclust(daisy.dist)
+plot(hc.3)
+p5 <- fviz_dist(daisy.dist)
+
 
 # Si miramos los datos agrupados, se agurparán de forma básica
-p2 <- fviz_cluster(object = clusters.2, data = train.data, geom = "point",
-             choose.vars = c("immigration", "adoption.of.the.budget.resolution" ), stand = FALSE, 
-             ellipse.type = "norm") + theme_bw()
-
 clusters.2 <- kmeans(train.data[,2:6], 2)
 clusters.5 <- kmeans(train.data[,2:6], 5)
 clusters.7 <- kmeans(train.data[,2:6], 7)
@@ -239,25 +259,23 @@ train.data$cluster.2 <- as.factor(clusters.2$cluster)
 train.data$cluster.5 <- as.factor(clusters.5$cluster)
 train.data$cluster.7 <- as.factor(clusters.7$cluster)
 
-# Probamos otro método
-d <- dist(train.data, method = "binary")
-hc <- hclust(d)
-plot(hc)
+p6 <- fviz_cluster(clusters.2, data = train.data[,2:6], palette = "jco", ggtheme = theme_minimal())
+p7 <- fviz_cluster(clusters.5, data = train.data[,2:6], palette = "jco", ggtheme = theme_minimal())
+p8 <- fviz_cluster(clusters.7, data = train.data[,2:6], palette = "jco", ggtheme = theme_minimal())
+
+# Clusters usando distancia Daisy
+dis.matrix.daisy = as.matrix(daisy.dist)
+km.daisy = kmeans(dis.matrix.daisy, 3)
+p9 <- fviz_cluster(km.daisy, data = train.data[, 2:6], palette = "jco", ggtheme = theme_minimal())
+
 
 # Finalmente usamos PAM
-pam.data.2 <- pam(train.data, 2)
-pam.data.5 <- pam(train.data, 5)
-pam.data.7 <- pam(train.data, 7)
+pam.data.2 <- pam(train.data[, 2:6], 2)
+pam.data.5 <- pam(train.data[, 2:6], 5)
+pam.data.7 <- pam(train.data[, 2:6], 7)
 
-fviz_cluster(pam.data.2)
-fviz_cluster(pam.data.5)
-fviz_cluster(pam.data.7)
+p10 <- fviz_cluster(pam.data.2)
+p11 <- fviz_cluster(pam.data.5)
+p12 <- fviz_cluster(pam.data.7)
 
-# calculamos las distancias
-
-
-kmeans1 <- kmeans(data, centers, iter.max = 10, nstart = 1)
-
-pam1 <- pam(data, 4, metric = "euclidean", stand = FALSE)
-pam2 <- pam(raw.data, 4, metric = "euclidean", stand = FALSE)
 
